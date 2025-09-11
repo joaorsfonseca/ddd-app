@@ -1,0 +1,1 @@
+namespace MyApp.Application; public interface IAppService { }

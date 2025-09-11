@@ -1,0 +1,1 @@
+using Microsoft.AspNetCore.Authorization; namespace MyApp.Infrastructure.Auth; public sealed class PermissionRequirement(string permission) : IAuthorizationRequirement{ public string Permission { get; } = permission; }

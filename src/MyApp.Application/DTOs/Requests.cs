@@ -1,0 +1,3 @@
+namespace MyApp.Application.DTOs;
+public sealed record CreateProductRequest(string Name, decimal Price);
+public sealed record UpdateProductRequest(string Name, decimal Price);

@@ -1,0 +1,1 @@
+using Microsoft.AspNetCore.Authorization; using Microsoft.AspNetCore.Mvc; namespace MyApp.Host.Controllers; public class HomeController : Controller{ public IActionResult Index()=> View(); [Authorize(Policy = "Permission:Products.Read")] public IActionResult Secure()=> Content("You have Products.Read"); }
