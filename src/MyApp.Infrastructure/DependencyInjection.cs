@@ -21,14 +21,14 @@ public static class DependencyInjection
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
         });
 
-        //services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
-        //{
-        //    options.Password.RequiredLength = 6;
-        //    options.User.RequireUniqueEmail = true;
-        //})
-        //.AddEntityFrameworkStores<AppDbContext>()
-        //.AddDefaultTokenProviders()
-        //.AddDefaultUI();
+        services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+        {
+            options.Password.RequiredLength = 6;
+            options.User.RequireUniqueEmail = true;
+        })
+        .AddEntityFrameworkStores<AppDbContext>()
+        .AddDefaultTokenProviders()
+        .AddDefaultUI();
 
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IProductService, MyApp.Application.Services.ProductAppService>();
