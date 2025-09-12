@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using MyApp.Application;
 using MyApp.Application.Security;
-using MyApp.Infrastructure.Auth;
+using Microsoft.AspNetCore.Identity;
 
 namespace MyApp.Host.Endpoints;
 
@@ -15,7 +15,12 @@ public static class AppServiceEndpointMapper
     public static IEndpointRouteBuilder MapAppServiceImplementations(this IEndpointRouteBuilder endpoints, Assembly appAssembly)
     {
         var api = endpoints.MapGroup("/api").WithGroupName("appservices");
-        api.RequireAuthorization(new AuthorizeAttribute{ AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme });
+
+        // Allow both Cookie and JWT authentication
+        api.RequireAuthorization(new AuthorizeAttribute
+        {
+            AuthenticationSchemes = $"{IdentityConstants.ApplicationScheme},{JwtBearerDefaults.AuthenticationScheme}"
+        });
 
         var types = appAssembly.GetExportedTypes()
             .Where(t => t is { IsClass: true, IsAbstract: false } && typeof(IAppService).IsAssignableFrom(t))
@@ -39,7 +44,7 @@ public static class AppServiceEndpointMapper
                     m,
                     ctx => ctx.RequestServices.GetService(impl) ?? ActivatorUtilities.CreateInstance(ctx.RequestServices, impl));
 
-                var builder = group.MapMethods(route, new[]{ http }, result.RequestDelegate);
+                var builder = group.MapMethods(route, new[] { http }, result.RequestDelegate);
 
                 if (result.EndpointMetadata is { Count: > 0 })
                     builder.WithMetadata(result.EndpointMetadata.ToArray());
@@ -48,7 +53,11 @@ public static class AppServiceEndpointMapper
                 if (!string.IsNullOrWhiteSpace(perm))
                     builder.RequireAuthorization($"Permission:{perm}");
 
-                builder.WithName($"{svcName}_{methodSegment}").WithOpenApi();
+                // Ensure OpenAPI metadata for Swagger
+                builder.WithName($"{svcName}_{methodSegment}")
+                       .WithOpenApi()
+                       .WithSummary($"{impl.Name}.{m.Name}")
+                       .WithDescription($"Endpoint for {svcName} service - {methodSegment} operation");
             }
         }
         return endpoints;
