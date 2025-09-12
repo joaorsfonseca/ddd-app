@@ -1,1 +1,46 @@
-using Microsoft.AspNetCore.Identity; using Microsoft.EntityFrameworkCore; using Microsoft.Extensions.DependencyInjection; using MyApp.Infrastructure.Identity; using MyApp.Infrastructure.Persistence; namespace MyApp.Infrastructure.Seed; public static class IdentitySeeder{ public static async Task SeedAsync(IServiceProvider sp){ using var scope = sp.CreateScope(); var db = scope.ServiceProvider.GetRequiredService<AppDbContext>(); await db.Database.MigrateAsync(); var roleMgr = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>(); var userMgr = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>(); string[] permissions = new[]{"Products.Read","Products.Create","Products.Update","Products.Delete"}; foreach(var p in permissions){ if(!await db.Permissions.AnyAsync(x=>x.Name==p)) db.Permissions.Add(new Permission{ Name=p, Description=$"Permission {p}"}); } await db.SaveChangesAsync(); var adminRole = await roleMgr.FindByNameAsync("Admin") ?? new ApplicationRole { Name = "Admin" }; if (adminRole.Id == Guid.Empty) await roleMgr.CreateAsync(adminRole); var adminPerms = await db.Permissions.ToListAsync(); foreach(var p in adminPerms){ if(!await db.RolePermissions.AnyAsync(rp=> rp.RoleId==adminRole.Id && rp.PermissionId==p.Id)) db.RolePermissions.Add(new RolePermission{ RoleId=adminRole.Id, PermissionId=p.Id}); } await db.SaveChangesAsync(); var admin = await userMgr.FindByEmailAsync("admin@local") ?? new ApplicationUser{ UserName="admin@local", Email="admin@local", EmailConfirmed=true, DisplayName="Admin"}; if(admin.Id == Guid.Empty){ await userMgr.CreateAsync(admin, "Pass@word1"); await userMgr.AddToRoleAsync(admin, adminRole.Name!); } } }
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using MyApp.Infrastructure.Identity;
+using MyApp.Infrastructure.Persistence;
+
+namespace MyApp.Infrastructure.Seed;
+
+public static class IdentitySeeder
+{
+    public static async Task SeedAsync(IServiceProvider sp)
+    {
+        using var scope = sp.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Database.MigrateAsync();
+
+        var roleMgr = scope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+        var userMgr = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        string[] permissions = new[]{"Products.Read","Products.Create","Products.Update","Products.Delete"};
+        foreach(var p in permissions)
+        {
+            if(!await db.Permissions.AnyAsync(x=>x.Name==p))
+                db.Permissions.Add(new Permission{ Name=p, Description=$"Permission {p}"});
+        }
+        await db.SaveChangesAsync();
+
+        var adminRole = await roleMgr.FindByNameAsync("Admin") ?? new ApplicationRole { Name = "Admin" };
+        if (adminRole.Id == Guid.Empty) await roleMgr.CreateAsync(adminRole);
+
+        var adminPerms = await db.Permissions.ToListAsync();
+        foreach(var p in adminPerms)
+        {
+            if(!await db.RolePermissions.AnyAsync(rp=> rp.RoleId==adminRole.Id && rp.PermissionId==p.Id))
+                db.RolePermissions.Add(new RolePermission{ RoleId=adminRole.Id, PermissionId=p.Id});
+        }
+        await db.SaveChangesAsync();
+
+        var admin = await userMgr.FindByEmailAsync("admin@local") ?? new ApplicationUser{ UserName="admin@local", Email="admin@local", EmailConfirmed=true, DisplayName="Admin"};
+        if(admin.Id == Guid.Empty)
+        {
+            await userMgr.CreateAsync(admin, "Pass@word1");
+            await userMgr.AddToRoleAsync(admin, adminRole.Name!);
+        }
+    }
+}

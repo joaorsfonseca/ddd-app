@@ -1,0 +1,1 @@
+namespace MyApp.Application.Security; [System.AttributeUsage(System.AttributeTargets.Method, AllowMultiple=false)] public sealed class RequiresPermissionAttribute(string name) : System.Attribute { public string Name {get;} = name; }

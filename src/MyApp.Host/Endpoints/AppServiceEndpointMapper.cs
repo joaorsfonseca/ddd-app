@@ -1,1 +1,71 @@
-using System.Reflection; using Microsoft.AspNetCore.Authentication.JwtBearer; using Microsoft.AspNetCore.Authorization; using Microsoft.AspNetCore.Http; using Microsoft.AspNetCore.Routing; using Microsoft.Extensions.DependencyInjection; using MyApp.Application; using MyApp.Infrastructure.Auth; namespace MyApp.Host.Endpoints; public static class AppServiceEndpointMapper{ public static IEndpointRouteBuilder MapAppServiceImplementations(this IEndpointRouteBuilder endpoints, Assembly appAssembly){ var api = endpoints.MapGroup("/api").WithGroupName("AppServices"); // choose JWT for this API surface by default api.RequireAuthorization(new AuthorizeAttribute{ AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme }); var types = appAssembly.GetExportedTypes() .Where(t => t is { IsClass: true, IsAbstract: false } && typeof(IAppService).IsAssignableFrom(t)) .ToList(); foreach (var impl in types){ var serviceName = impl.Name; var group = api.MapGroup($"/{serviceName}").WithTags(serviceName); var methods = impl.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly) .Where(m => !m.IsSpecialName); foreach (var m in methods){ var http = InferVerb(m.Name); var route = $"/{m.Name}"; var result = Microsoft.AspNetCore.Http.RequestDelegateFactory.Create( m, ctx => ctx.RequestServices.GetService(impl) ?? ActivatorUtilities.CreateInstance(ctx.RequestServices, impl)); var builder = group.MapMethods(route, new[]{ http }, result.RequestDelegate); if (result.EndpointMetadata is { Count: > 0 }) builder.WithMetadata(result.EndpointMetadata.ToArray()); var perm = m.GetCustomAttribute<RequiresPermissionAttribute>()?.Name; if (!string.IsNullOrWhiteSpace(perm)) builder.RequireAuthorization($"Permission:{perm}"); builder.WithName($"{serviceName}_{m.Name}").WithOpenApi(); } } return endpoints; } private static string InferVerb(string methodName) => methodName.StartsWith("Get", StringComparison.OrdinalIgnoreCase) || methodName.StartsWith("List", StringComparison.OrdinalIgnoreCase) || methodName.StartsWith("Find", StringComparison.OrdinalIgnoreCase) ? "GET" : methodName.StartsWith("Create", StringComparison.OrdinalIgnoreCase) || methodName.StartsWith("Add", StringComparison.OrdinalIgnoreCase) || methodName.StartsWith("Post", StringComparison.OrdinalIgnoreCase) ? "POST" : methodName.StartsWith("Update", StringComparison.OrdinalIgnoreCase) || methodName.StartsWith("Put", StringComparison.OrdinalIgnoreCase) ? "PUT" : methodName.StartsWith("Delete", StringComparison.OrdinalIgnoreCase) || methodName.StartsWith("Remove", StringComparison.OrdinalIgnoreCase) ? "DELETE" : "POST"; }
+using System.Reflection;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+using MyApp.Application;
+using MyApp.Application.Security;
+using MyApp.Infrastructure.Auth;
+
+namespace MyApp.Host.Endpoints;
+
+public static class AppServiceEndpointMapper
+{
+    public static IEndpointRouteBuilder MapAppServiceImplementations(this IEndpointRouteBuilder endpoints, Assembly appAssembly)
+    {
+        var api = endpoints.MapGroup("/api").WithGroupName("appservices");
+        api.RequireAuthorization(new AuthorizeAttribute{ AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme });
+
+        var types = appAssembly.GetExportedTypes()
+            .Where(t => t is { IsClass: true, IsAbstract: false } && typeof(IAppService).IsAssignableFrom(t))
+            .ToList();
+
+        foreach (var impl in types)
+        {
+            var svcName = TrimSuffix(impl.Name, "AppService").ToLowerInvariant();
+            var group = api.MapGroup($"/{svcName}").WithTags(svcName);
+
+            var methods = impl.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
+                              .Where(m => !m.IsSpecialName);
+
+            foreach (var m in methods)
+            {
+                var http = InferVerb(m.Name);
+                var methodSegment = TrimSuffix(m.Name, "Async").ToLowerInvariant();
+                var route = $"/{methodSegment}";
+
+                var result = RequestDelegateFactory.Create(
+                    m,
+                    ctx => ctx.RequestServices.GetService(impl) ?? ActivatorUtilities.CreateInstance(ctx.RequestServices, impl));
+
+                var builder = group.MapMethods(route, new[]{ http }, result.RequestDelegate);
+
+                if (result.EndpointMetadata is { Count: > 0 })
+                    builder.WithMetadata(result.EndpointMetadata.ToArray());
+
+                var perm = m.GetCustomAttribute<RequiresPermissionAttribute>()?.Name;
+                if (!string.IsNullOrWhiteSpace(perm))
+                    builder.RequireAuthorization($"Permission:{perm}");
+
+                builder.WithName($"{svcName}_{methodSegment}").WithOpenApi();
+            }
+        }
+        return endpoints;
+    }
+
+    private static string InferVerb(string methodName) =>
+        methodName.StartsWith("get", StringComparison.OrdinalIgnoreCase) ||
+        methodName.StartsWith("list", StringComparison.OrdinalIgnoreCase) ||
+        methodName.StartsWith("find", StringComparison.OrdinalIgnoreCase) ? "GET" :
+        methodName.StartsWith("create", StringComparison.OrdinalIgnoreCase) ||
+        methodName.StartsWith("add", StringComparison.OrdinalIgnoreCase) ||
+        methodName.StartsWith("post", StringComparison.OrdinalIgnoreCase) ? "POST" :
+        methodName.StartsWith("update", StringComparison.OrdinalIgnoreCase) ||
+        methodName.StartsWith("put", StringComparison.OrdinalIgnoreCase) ? "PUT" :
+        methodName.StartsWith("delete", StringComparison.OrdinalIgnoreCase) ||
+        methodName.StartsWith("remove", StringComparison.OrdinalIgnoreCase) ? "DELETE" : "POST";
+
+    private static string TrimSuffix(string input, string suffix) =>
+        input.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ? input[..^suffix.Length] : input;
+}
