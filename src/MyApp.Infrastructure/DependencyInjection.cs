@@ -27,8 +27,8 @@ public static class DependencyInjection
             options.User.RequireUniqueEmail = true;
         })
         .AddEntityFrameworkStores<AppDbContext>()
-        .AddDefaultTokenProviders();
-        //.AddDefaultUI();
+        .AddDefaultTokenProviders()
+        .AddDefaultUI();
 
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IProductService, MyApp.Application.Services.ProductAppService>();
