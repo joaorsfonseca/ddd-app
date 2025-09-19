@@ -1,5 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Identity
 @using MyApp.Infrastructure.Identity
+@using System.Security.Claims
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
 
@@ -24,7 +25,7 @@
             <span class="avatar avatar-sm" style="background-image: url('https://ui-avatars.com/api/?name=@User.Identity?.Name&background=206bc4&color=fff&size=128')"></span>
             <div class="d-none d-xl-block ps-2">
                 <div>@(User.Identity?.Name ?? "User")</div>
-                @* <div class="mt-1 small text-muted">@(User.FindFirst("permission")?.Value ?? "User")</div> *@
+                <div class="mt-1 small text-muted">@User.FindFirst("permission")?.Value ?? "User"</div>
             </div>
         </a>
         <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
@@ -33,7 +34,7 @@
                 <span class="avatar avatar-md" style="background-image: url('https://ui-avatars.com/api/?name=@User.Identity?.Name&background=206bc4&color=fff&size=128')"></span>
                 <div class="mt-2">
                     <div class="fw-bold">@(User.Identity?.Name ?? "User")</div>
-                    <div class="text-muted small">@(User.FindFirst("")?.Value ?? "user@example.com")</div>
+                    <div class="text-muted small">@(User.FindFirst(ClaimTypes.Email)?.Value ?? "user@example.com")</div>
                 </div>
             </div>
 
@@ -131,6 +132,7 @@ else
             </a>
         </div>
     </div>
+
     <!-- Mobile Login/Register -->
     <div class="nav-item dropdown d-md-none">
         <a class="nav-link dropdown-toggle" href="#navbar-extra" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
