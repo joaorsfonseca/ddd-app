@@ -3,25 +3,197 @@
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
 
-<ul class="navbar-nav">
+<!-- Theme Toggle (Optional) -->
+<div class="nav-item d-none d-md-flex me-3">
+    <a href="#" class="nav-link px-0" title="Toggle theme" onclick="toggleTheme()">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-theme-light" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7" />
+        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-theme-dark d-none" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+        </svg>
+    </a>
+</div>
+
 @if (SignInManager.IsSignedIn(User))
 {
-    <li class="nav-item">
-        <a  class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">Hello @User.Identity?.Name!</a>
-    </li>
-    <li class="nav-item">
-        <form  class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-            <button  type="submit" class="nav-link btn btn-link text-dark">Logout</button>
-        </form>
-    </li>
+    <!-- User Dropdown Menu -->
+    <div class="nav-item dropdown">
+        <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="Open user menu">
+            <span class="avatar avatar-sm" style="background-image: url('https://ui-avatars.com/api/?name=@User.Identity?.Name&background=206bc4&color=fff&size=128')"></span>
+            <div class="d-none d-xl-block ps-2">
+                <div>@(User.Identity?.Name ?? "User")</div>
+                @* <div class="mt-1 small text-muted">@(User.FindFirst("permission")?.Value ?? "User")</div> *@
+            </div>
+        </a>
+        <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+            <!-- User Info Header -->
+            <div class="dropdown-header">
+                <span class="avatar avatar-md" style="background-image: url('https://ui-avatars.com/api/?name=@User.Identity?.Name&background=206bc4&color=fff&size=128')"></span>
+                <div class="mt-2">
+                    <div class="fw-bold">@(User.Identity?.Name ?? "User")</div>
+                    <div class="text-muted small">@(User.FindFirst("")?.Value ?? "user@example.com")</div>
+                </div>
+            </div>
+
+            <div class="dropdown-divider"></div>
+
+            <!-- Profile & Settings -->
+            <a class="dropdown-item" asp-area="Identity" asp-page="/Account/Manage/Index">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon dropdown-item-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <circle cx="12" cy="7" r="4" />
+                    <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                </svg>
+                My Profile
+            </a>
+
+            <a class="dropdown-item" asp-area="Identity" asp-page="/Account/Manage/ChangePassword">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon dropdown-item-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <rect x="5" y="11" width="14" height="10" rx="2" />
+                    <circle cx="12" cy="16" r="1" />
+                    <path d="M8 11v-4a4 4 0 0 1 8 0v4" />
+                </svg>
+                Change Password
+            </a>
+
+            <a class="dropdown-item" href="/settings">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon dropdown-item-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1.042 .635 2.405 .118 2.572 -1.065z" />
+                    <circle cx="12" cy="12" r="3" />
+                </svg>
+                Settings
+            </a>
+
+            <!-- Help & Support -->
+            <div class="dropdown-divider"></div>
+
+            <a class="dropdown-item" href="/help">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon dropdown-item-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <circle cx="12" cy="12" r="4" />
+                    <circle cx="12" cy="12" r="9" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>
+                Help & Support
+            </a>
+
+            <a class="dropdown-item" href="/scalar/v1" target="_blank">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon dropdown-item-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <path d="M7 8l-4 4l4 4" />
+                    <path d="M17 8l4 4l-4 4" />
+                    <path d="M14 4l-4 16" />
+                </svg>
+                API Documentation
+            </a>
+
+            <div class="dropdown-divider"></div>
+
+            <!-- Logout -->
+            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })" class="dropdown-item p-0">
+                <button type="submit" class="dropdown-item text-danger border-0 bg-transparent w-100 text-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon dropdown-item-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" />
+                        <path d="M7 12h14l-3 -3m0 6l3 -3" />
+                    </svg>
+                    Sign Out
+                </button>
+            </form>
+        </div>
+    </div>
 }
 else
 {
-    <li class="nav-item">
-        <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Register">Register</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Login">Login</a>
-    </li>
+    <!-- Login/Register Links -->
+    <div class="nav-item d-none d-md-flex me-3">
+        <div class="btn-list">
+            <a href="@Url.Action("Register", "Account", new { area = "Identity" })" class="btn btn-outline-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <circle cx="12" cy="7" r="4" />
+                    <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                </svg>
+                Register
+            </a>
+            <a href="@Url.Action("Login", "Account", new { area = "Identity" })" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" />
+                    <path d="M20 12h-13l3 -3m0 6l3 -3" />
+                </svg>
+                Sign In
+            </a>
+        </div>
+    </div>
+    <!-- Mobile Login/Register -->
+    <div class="nav-item dropdown d-md-none">
+        <a class="nav-link dropdown-toggle" href="#navbar-extra" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="7" r="4" />
+                <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+            </svg>
+        </a>
+        <div class="dropdown-menu dropdown-menu-end">
+            <a class="dropdown-item" asp-area="Identity" asp-page="/Account/Login">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon dropdown-item-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" />
+                    <path d="M20 12h-13l3 -3m0 6l3 -3" />
+                </svg>
+                Sign In
+            </a>
+            <a class="dropdown-item" asp-area="Identity" asp-page="/Account/Register">
+                <svg xmlns="http://www.w3.2000/svg" class="icon dropdown-item-icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="7" r="4" />
+                    <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                </svg>
+                Register
+            </a>
+        </div>
+    </div>
 }
-</ul>
+
+<script>
+    // Theme toggle functionality
+    function toggleTheme() {
+        const htmlElement = document.documentElement;
+        const currentTheme = htmlElement.getAttribute('data-bs-theme');
+        const lightIcon = document.querySelector('.icon-theme-light');
+        const darkIcon = document.querySelector('.icon-theme-dark');
+
+        if (currentTheme === 'dark') {
+            htmlElement.setAttribute('data-bs-theme', 'light');
+            localStorage.setItem('theme', 'light');
+            lightIcon.classList.remove('d-none');
+            darkIcon.classList.add('d-none');
+        } else {
+            htmlElement.setAttribute('data-bs-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            lightIcon.classList.add('d-none');
+            darkIcon.classList.remove('d-none');
+        }
+    }
+
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        const htmlElement = document.documentElement;
+        const lightIcon = document.querySelector('.icon-theme-light');
+        const darkIcon = document.querySelector('.icon-theme-dark');
+
+        htmlElement.setAttribute('data-bs-theme', savedTheme);
+
+        if (savedTheme === 'dark') {
+            lightIcon.classList.add('d-none');
+            darkIcon.classList.remove('d-none');
+        } else {
+            lightIcon.classList.remove('d-none');
+            darkIcon.classList.add('d-none');
+        }
+    });
+</script>

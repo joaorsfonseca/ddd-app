@@ -3,47 +3,394 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - WebApplication2</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <title>@ViewData["Title"] - MyApp</title>
+
+    <!-- Tabler Core CSS -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/&#64;tabler/core@1.4.0/dist/css/tabler.min.css" />
+    <!-- Custom CSS for collapsible sidebar -->
+    <style>
+        /* Custom styles for collapsible sidebar */
+        .sidebar-collapsed {
+            width: 60px !important;
+        }
+
+            .sidebar-collapsed .navbar-brand-autodark {
+                display: none;
+            }
+
+            .sidebar-collapsed .nav-link-title {
+                display: none;
+            }
+
+            .sidebar-collapsed .nav-link {
+                justify-content: center;
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+
+            .sidebar-collapsed .dropdown-toggle::after {
+                display: none;
+            }
+
+            .sidebar-collapsed .dropdown-menu {
+                position: fixed;
+                left: 60px;
+                margin-top: -2.5rem;
+            }
+
+        .navbar-vertical {
+            transition: width 0.3s ease;
+            width: 280px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 1050;
+        }
+
+        .page-wrapper {
+            margin-left: 280px;
+            transition: margin-left 0.3s ease;
+        }
+
+            .page-wrapper.sidebar-collapsed {
+                margin-left: 60px;
+            }
+
+        .navbar-expand-md {
+            margin-left: 280px;
+            transition: margin-left 0.3s ease;
+        }
+
+            .navbar-expand-md.sidebar-collapsed {
+                margin-left: 60px;
+            }
+
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            padding: 0.5rem;
+            cursor: pointer;
+            color: var(--tblr-navbar-color);
+        }
+
+            .sidebar-toggle:hover {
+                color: var(--tblr-navbar-hover-color);
+            }
+
+        /* Mobile responsiveness */
+        @@media (max-width: 767.98px) {
+            .navbar-vertical
+
+        {
+            transform: translateX(-100%);
+            width: 280px !important;
+        }
+
+        .navbar-vertical.show {
+            transform: translateX(0);
+        }
+
+        .page-wrapper, .navbar-expand-md {
+            margin-left: 0 !important;
+        }
+
+        .sidebar-collapsed .dropdown-menu {
+            position: absolute;
+            left: 0;
+            margin-top: 0;
+        }
+
+        }
+    </style>
+
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/WebApplication2.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+    <div class="page">
+        <!-- Sidebar -->
+        <aside class="navbar navbar-vertical navbar-expand-lg navbar-dark" id="sidebar">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">WebApplication2</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                <!-- Mobile toggle button -->
+                <button class="navbar-toggler d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu" aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+
+                <!-- Brand -->
+                <h1 class="navbar-brand navbar-brand-autodark">
+                    <a href="@Url.Action("Index", "Home")">
+                        <img src="~/img/logo.svg" width="110" height="32" alt="MyApp" class="navbar-brand-image">
+                    </a>
+                </h1>
+
+                <!-- Navigation Menu -->
+                <div class="collapse navbar-collapse" id="sidebar-menu">
+                    <ul class="navbar-nav pt-lg-3">
+                        <!-- Dashboard -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link" href="@Url.Action("Index", "Home")">
+                                <span class="nav-link-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <polyline points="5 12 3 12 12 3 21 12 19 12" />
+                                        <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+                                        <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+                                    </svg>
+                                </span>
+                                <span class="nav-link-title">Dashboard</span>
+                            </a>
                         </li>
+
+                        <!-- Products Dropdown -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#navbar-extra" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="false">
+                                <span class="nav-link-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5" />
+                                        <path d="M12 12l8 -4.5" />
+                                        <path d="M12 12l0 9" />
+                                        <path d="M12 12l-8 -4.5" />
+                                    </svg>
+                                </span>
+                                <span class="nav-link-title">Products</span>
+                            </a>
+                            <div class="dropdown-menu">
+                                <div class="dropdown-menu-columns">
+                                    <div class="dropdown-menu-column">
+                                        <a class="dropdown-item" href="/products">
+                                            <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                    <path d="M9 11l3 3l8 -8" />
+                                                    <path d="M20 12v6a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h9" />
+                                                </svg>
+                                            </span>
+                                            List Products
+                                        </a>
+                                        <a class="dropdown-item" href="/products/create">
+                                            <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                    <path d="M12 5l0 14" />
+                                                    <path d="M5 12l14 0" />
+                                                </svg>
+                                            </span>
+                                            Create Product
+                                        </a>
+                                        <a class="dropdown-item" href="/products/reports">
+                                            <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                    <path d="M3 12m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+                                                    <path d="M9 8m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+                                                    <path d="M15 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />
+                                                    <path d="M4 20l14 0" />
+                                                </svg>
+                                            </span>
+                                            Reports
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <!-- API Documentation -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link" href="/scalar/v1" target="_blank">
+                                <span class="nav-link-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path d="M7 8l-4 4l4 4" />
+                                        <path d="M17 8l4 4l-4 4" />
+                                        <path d="M14 4l-4 16" />
+                                    </svg>
+                                </span>
+                                <span class="nav-link-title">API Docs</span>
+                            </a>
+                        </li>
+
+                        <!-- Settings -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="/settings">
+                                <span class="nav-link-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <circle cx="12" cy="12" r="3" />
+                                        <path d="M12 1a11 11 0 0 0 0 22a11 11 0 0 0 0 -22" />
+                                        <path d="M12 7a5 5 0 0 1 5 5" />
+                                    </svg>
+                                </span>
+                                <span class="nav-link-title">Settings</span>
+                            </a>
                         </li>
                     </ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Sticky Top Navbar -->
+        <header class="navbar navbar-expand-md d-print-none sticky-top">
+            <div class="container-xl">
+                <!-- Sidebar Toggle Button -->
+                <div class="d-none d-lg-flex">
+                    <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Mobile Sidebar Toggle -->
+                <button class="navbar-toggler d-lg-none" type="button" onclick="toggleMobileSidebar()" aria-label="Open sidebar">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Breadcrumbs / Page Title -->
+                <div class="navbar-nav flex-row order-md-last">
+                    <div class="d-none d-md-flex">
+                        <span class="navbar-text">
+                            @ViewData["Title"] ?? "Dashboard"
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Right side navbar items -->
+                <div class="navbar-nav flex-row order-md-last">
+                    <!-- Notifications -->
+                    <div class="nav-item dropdown d-none d-md-flex me-3">
+                        <a href="#" class="nav-link px-0" data-bs-toggle="dropdown" tabindex="-1" aria-label="Show notifications">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M10 6h-3a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-3" />
+                                <circle cx="17" cy="7" r="3" />
+                            </svg>
+                            <span class="badge bg-red"></span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-arrow dropdown-menu-end dropdown-menu-card">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Notifications</h3>
+                                </div>
+                                <div class="list-group list-group-flush list-group-hoverable">
+                                    <div class="list-group-item">
+                                        <div class="row align-items-center">
+                                            <div class="col-auto">
+                                                <span class="status-dot status-dot-animated bg-red d-block"></span>
+                                            </div>
+                                            <div class="col text-truncate">
+                                                <a href="#" class="text-body d-block">New product created</a>
+                                                <div class="d-block text-muted text-truncate mt-n1">2 minutes ago</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Menu -->
                     <partial name="_LoginPartial" />
                 </div>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+        </header>
+
+        <!-- Main Content -->
+        <div class="page-wrapper" id="page-wrapper">
+            <!-- Page Header -->
+            <div class="page-header d-print-none">
+                <div class="container-xl">
+                    <div class="row g-2 align-items-center">
+                        <div class="col">
+                            <div class="page-pretitle">Overview</div>
+                            <h2 class="page-title">@ViewData["Title"]</h2>
+                        </div>
+                        <!-- Page Actions -->
+                        <div class="col-auto ms-auto d-print-none">
+                            @RenderSection("PageActions", required: false)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Body -->
+            <div class="page-body">
+                <div class="container-xl">
+                    @RenderBody()
+                </div>
+            </div>
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - WebApplication2 - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/&#64;tabler/core@1.4.0/dist/js/tabler.min.js"></script>
+    <script>
+        // Sidebar toggle functionality
+        let sidebarCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const pageWrapper = document.getElementById('page-wrapper');
+            const navbar = document.querySelector('.navbar-expand-md');
+
+            sidebarCollapsed = !sidebarCollapsed;
+
+            if (sidebarCollapsed) {
+                sidebar.classList.add('sidebar-collapsed');
+                pageWrapper.classList.add('sidebar-collapsed');
+                navbar.classList.add('sidebar-collapsed');
+            } else {
+                sidebar.classList.remove('sidebar-collapsed');
+                pageWrapper.classList.remove('sidebar-collapsed');
+                navbar.classList.remove('sidebar-collapsed');
+            }
+
+            localStorage.setItem('sidebar-collapsed', sidebarCollapsed);
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('show');
+        }
+
+        // Initialize sidebar state on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (sidebarCollapsed) {
+                const sidebar = document.getElementById('sidebar');
+                const pageWrapper = document.getElementById('page-wrapper');
+                const navbar = document.querySelector('.navbar-expand-md');
+
+                sidebar.classList.add('sidebar-collapsed');
+                pageWrapper.classList.add('sidebar-collapsed');
+                navbar.classList.add('sidebar-collapsed');
+            }
+        });
+
+        // Close mobile sidebar when clicking outside
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggleButton = document.querySelector('.navbar-toggler');
+
+            if (window.innerWidth < 768 &&
+                !sidebar.contains(event.target) &&
+                !toggleButton.contains(event.target) &&
+                sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth >= 768) {
+                sidebar.classList.remove('show');
+            }
+        });
+    </script>
+
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
