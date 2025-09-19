@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MyApp.Application.Interfaces;
+using MyApp.Application.Services;
 using MyApp.Domain.Repositories;
 using MyApp.Infrastructure.Auth;
 using MyApp.Infrastructure.Identity;
@@ -39,8 +40,12 @@ public static class DependencyInjection
         .AddDefaultTokenProviders()
         .AddDefaultUI();
 
+        services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+
         services.AddScoped<IProductRepository, ProductRepository>();
-        services.AddScoped<IProductService, MyApp.Application.Services.ProductAppService>();
+        services.AddScoped<IProductService, ProductAppService>();
+        services.AddScoped<IProjectAppService, ProjectAppService>();
+        services.AddScoped<IExpenseAppService, ExpenseAppService>();
 
         services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
         services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
