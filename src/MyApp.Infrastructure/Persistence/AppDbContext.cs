@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MyApp.Domain.Entities;
@@ -5,7 +6,7 @@ using MyApp.Infrastructure.Identity;
 
 namespace MyApp.Infrastructure.Persistence;
 
-public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
+public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, int, IdentityUserClaim<int>, ApplicationUserRole, IdentityUserLogin<int>, IdentityRoleClaim<int>, IdentityUserToken<int>>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options): base(options){}
     public DbSet<Product> Products => Set<Product>();
@@ -16,12 +17,25 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
     protected override void OnModelCreating(ModelBuilder b)
     {
         base.OnModelCreating(b);
-        b.Entity<Product>(cfg=>{
-            cfg.HasKey(p=>p.Id);
-            cfg.Property(p=>p.Name).HasMaxLength(200).IsRequired();
-            cfg.Property(p=>p.Price).HasColumnType("decimal(18,2)");
-            cfg.HasIndex(p=>p.Name).IsUnique();
-        });
+        //b.Entity<Product>(cfg=>{
+        //    cfg.HasKey(p=>p.Id);
+        //    cfg.Property(p=>p.Name).HasMaxLength(200).IsRequired();
+        //    cfg.Property(p=>p.Price).HasColumnType("decimal(18,2)");
+        //    cfg.HasIndex(p=>p.Name).IsUnique();
+        //});
+        b.Entity<ApplicationUser>()
+            .HasMany(u => u.Roles)
+            .WithOne()
+            .HasForeignKey(e => e.UserId)
+            .IsRequired();
+        b.Entity<ApplicationUserRole>()
+            .HasOne(e => e.Role)
+            .WithMany(e => e.Users)
+            .HasForeignKey(e => e.RoleId);
+        b.Entity<ApplicationUserRole>()
+            .HasOne(e => e.User)
+            .WithMany(e => e.Roles)
+            .HasForeignKey(e => e.UserId);
         b.Entity<Permission>(cfg=>{
             cfg.HasKey(p=>p.Id);
             cfg.Property(p=>p.Name).HasMaxLength(200).IsRequired();

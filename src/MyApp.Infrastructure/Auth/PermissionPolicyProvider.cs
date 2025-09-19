@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
 
 namespace MyApp.Infrastructure.Auth;
 

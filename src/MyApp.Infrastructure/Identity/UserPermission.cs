@@ -1,1 +1,9 @@
-namespace MyApp.Infrastructure.Identity; public class UserPermission{ public Guid UserId { get; set; } public ApplicationUser User { get; set; } = default!; public Guid PermissionId { get; set; } public Permission Permission { get; set; } = default!; }
+namespace MyApp.Infrastructure.Identity;
+
+public class UserPermission
+{
+    public int UserId { get; set; }
+    public ApplicationUser User { get; set; } = default!;
+    public Guid PermissionId { get; set; }
+    public Permission Permission { get; set; } = default!;
+}

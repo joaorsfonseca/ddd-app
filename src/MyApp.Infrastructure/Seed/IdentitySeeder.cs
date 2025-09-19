@@ -26,7 +26,7 @@ public static class IdentitySeeder
         await db.SaveChangesAsync();
 
         var adminRole = await roleMgr.FindByNameAsync("Admin") ?? new ApplicationRole { Name = "Admin" };
-        if (adminRole.Id == Guid.Empty) await roleMgr.CreateAsync(adminRole);
+        if (adminRole.Id == 0) await roleMgr.CreateAsync(adminRole);
 
         var adminPerms = await db.Permissions.ToListAsync();
         foreach(var p in adminPerms)
@@ -36,8 +36,8 @@ public static class IdentitySeeder
         }
         await db.SaveChangesAsync();
 
-        var admin = await userMgr.FindByEmailAsync("admin@local") ?? new ApplicationUser{ UserName="admin@local", Email="admin@local", EmailConfirmed=true, DisplayName="Admin"};
-        if(admin.Id == Guid.Empty)
+        var admin = await userMgr.FindByEmailAsync("admin@local") ?? new ApplicationUser{ UserName="admin@local", Email="admin@local", EmailConfirmed=true, Name="Admin"};
+        if(admin.Id == 0)
         {
             await userMgr.CreateAsync(admin, "Pass@word1");
             await userMgr.AddToRoleAsync(admin, adminRole.Name!);

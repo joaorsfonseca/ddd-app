@@ -67,7 +67,7 @@ builder.Services.AddOpenApi(options =>
 
 var app = builder.Build();
 
-await IdentitySeeder.SeedAsync(app.Services);
+//await IdentitySeeder.SeedAsync(app.Services);
 
 if (app.Environment.IsDevelopment())
 {

@@ -18,7 +18,7 @@ public sealed class PermissionAuthorizationHandler(UserManager<ApplicationUser> 
             return;
         }
         var userIdStr = userManager.GetUserId(context.User);
-        if (!Guid.TryParse(userIdStr, out var userId)) return;
+        if (!int.TryParse(userIdStr, out var userId)) return;
         var has = await db.UserPermissions.AnyAsync(up => up.UserId == userId && up.Permission.Name == requirement.Permission);
         if (has) { context.Succeed(requirement); return; }
         var roles = await (from ur in db.UserRoles where ur.UserId==userId
