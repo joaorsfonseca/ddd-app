@@ -1,4 +1,4 @@
-html {
+/*html {
   font-size: 14px;
 }
 
@@ -19,4 +19,23 @@ html {
 
 body {
   margin-bottom: 60px;
+}*/
+
+@media (min-width: 992px) {
+    :host, :root {
+        margin-left: unset;
+        margin-right: 0;
+    }
+}
+
+@media (min-width: 992px) {
+    .navbar-expand-lg.navbar-vertical ~ .navbar.navbar-expand-md.sidebar-collapsed {
+        margin-left: 60px;
+    }
+}
+
+@media (min-width: 992px) {
+    .navbar-expand-lg.navbar-vertical ~ .page-wrapper.sidebar-collapsed {
+        margin-left: 60px;
+    }
 }

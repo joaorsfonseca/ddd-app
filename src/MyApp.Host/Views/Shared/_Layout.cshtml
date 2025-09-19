@@ -10,35 +10,7 @@
           href="https://cdn.jsdelivr.net/npm/&#64;tabler/core@1.4.0/dist/css/tabler.min.css" />
     <!-- Custom CSS for collapsible sidebar -->
     <style>
-        /* Custom styles for collapsible sidebar */
-        .sidebar-collapsed {
-            width: 60px !important;
-        }
-
-            .sidebar-collapsed .navbar-brand-autodark {
-                display: none;
-            }
-
-            .sidebar-collapsed .nav-link-title {
-                display: none;
-            }
-
-            .sidebar-collapsed .nav-link {
-                justify-content: center;
-                padding-left: 0.75rem;
-                padding-right: 0.75rem;
-            }
-
-            .sidebar-collapsed .dropdown-toggle::after {
-                display: none;
-            }
-
-            .sidebar-collapsed .dropdown-menu {
-                position: fixed;
-                left: 60px;
-                margin-top: -2.5rem;
-            }
-
+        /* Collapsing Sidebar - Core Functionality */
         .navbar-vertical {
             transition: width 0.3s ease;
             width: 280px;
@@ -49,15 +21,60 @@
             z-index: 1050;
         }
 
+            /* Collapsed state */
+            .navbar-vertical.sidebar-collapsed {
+                width: 60px;
+                overflow: visible; /* Important for dropdowns */
+            }
+
+                /* Hide/show elements when collapsed */
+                .navbar-vertical.sidebar-collapsed .navbar-brand-autodark {
+                    opacity: 0;
+                    visibility: hidden;
+                    transition: all 0.3s ease;
+                }
+
+                .navbar-vertical.sidebar-collapsed .nav-link-title {
+                    opacity: 0;
+                    visibility: hidden;
+                    width: 0;
+                    overflow: hidden;
+                    transition: all 0.3s ease;
+                }
+
+                /* Center icons when collapsed */
+                .navbar-vertical.sidebar-collapsed .nav-link {
+                    justify-content: center;
+                    padding-left: 1rem;
+                    padding-right: 1rem;
+                }
+
+                /* Hide dropdown arrows when collapsed */
+                .navbar-vertical.sidebar-collapsed .dropdown-toggle::after {
+                    display: none;
+                }
+
+                /* Position dropdown menus outside collapsed sidebar */
+                .navbar-vertical.sidebar-collapsed .dropdown-menu {
+                    position: fixed;
+                    left: 60px;
+                    margin-top: -2.5rem;
+                    z-index: 1060;
+                    min-width: 200px;
+                }
+
+        /* Page layout adjustments */
         .page-wrapper {
             margin-left: 280px;
             transition: margin-left 0.3s ease;
+            min-height: 100vh;
         }
 
             .page-wrapper.sidebar-collapsed {
                 margin-left: 60px;
             }
 
+        /* Top navbar adjustments */
         .navbar-expand-md {
             margin-left: 280px;
             transition: margin-left 0.3s ease;
@@ -67,25 +84,27 @@
                 margin-left: 60px;
             }
 
+        /* Sidebar toggle button styling */
         .sidebar-toggle {
             background: none;
             border: none;
             padding: 0.5rem;
             cursor: pointer;
-            color: var(--tblr-navbar-color);
+            border-radius: var(--tblr-border-radius, 4px);
+            transition: all 0.2s ease;
         }
 
             .sidebar-toggle:hover {
-                color: var(--tblr-navbar-hover-color);
+                background-color: var(--tblr-bg-surface-secondary, rgba(0,0,0,0.05));
             }
 
         /* Mobile responsiveness */
-        @@media (max-width: 767.98px) {
+        @@media (max-width: 991.98px) {
             .navbar-vertical
 
         {
             transform: translateX(-100%);
-            width: 280px !important;
+            width: 280px !important; /* Force normal width on mobile */
         }
 
         .navbar-vertical.show {
@@ -93,10 +112,11 @@
         }
 
         .page-wrapper, .navbar-expand-md {
-            margin-left: 0 !important;
+            margin-left: 0 !important; /* No margin on mobile */
         }
 
-        .sidebar-collapsed .dropdown-menu {
+        /* Reset dropdown positioning on mobile */
+        .navbar-vertical.sidebar-collapsed .dropdown-menu {
             position: absolute;
             left: 0;
             margin-top: 0;
@@ -231,11 +251,11 @@
         </aside>
 
         <!-- Sticky Top Navbar -->
-        <header class="navbar navbar-expand-md d-print-none sticky-top">
+        <header class="navbar navbar-expand-md d-print-none sticky-top" id="top-navbar">
             <div class="container-fluid">
                 <!-- Sidebar Toggle Button -->
                 <div class="d-none d-lg-flex">
-                    <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+                    <button class="sidebar-toggle me-3" onclick="toggleSidebar()" title="Toggle Sidebar">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="3" y1="6" x2="21" y2="6"></line>
                             <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -328,64 +348,80 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/&#64;tabler/core@1.4.0/dist/js/tabler.min.js"></script>
     <script>
-        // Sidebar toggle functionality
+        // Sidebar collapse functionality - Focused and Clean
         let sidebarCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
 
         function toggleSidebar() {
+            // Get all elements that need to be updated
             const sidebar = document.getElementById('sidebar');
-            const pageWrapper = document.getElementById('page-wrapper');
-            const navbar = document.querySelector('.navbar-expand-md');
+            const pageWrapper = document.getElementById('page-wrapper') || document.querySelector('.page-wrapper');
+            const topNavbar = document.getElementById('top-navbar') || document.querySelector('.navbar-expand-md');
 
-            sidebarCollapsed = !sidebarCollapsed;
-
-            if (sidebarCollapsed) {
-                sidebar.classList.add('sidebar-collapsed');
-                pageWrapper.classList.add('sidebar-collapsed');
-                navbar.classList.add('sidebar-collapsed');
-            } else {
-                sidebar.classList.remove('sidebar-collapsed');
-                pageWrapper.classList.remove('sidebar-collapsed');
-                navbar.classList.remove('sidebar-collapsed');
+            // Check if elements exist
+            if (!sidebar) {
+                console.error('Sidebar element not found');
+                return;
             }
 
-            localStorage.setItem('sidebar-collapsed', sidebarCollapsed);
+            // Toggle the collapsed state
+            sidebarCollapsed = !sidebarCollapsed;
+
+            // Apply/remove collapsed classes
+            if (sidebarCollapsed) {
+                sidebar.classList.add('sidebar-collapsed');
+                if (pageWrapper) pageWrapper.classList.add('sidebar-collapsed');
+                if (topNavbar) topNavbar.classList.add('sidebar-collapsed');
+            } else {
+                sidebar.classList.remove('sidebar-collapsed');
+                if (pageWrapper) pageWrapper.classList.remove('sidebar-collapsed');
+                if (topNavbar) topNavbar.classList.remove('sidebar-collapsed');
+            }
+
+            // Save state to localStorage
+            localStorage.setItem('sidebar-collapsed', sidebarCollapsed.toString());
         }
 
         function toggleMobileSidebar() {
             const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('show');
+            if (sidebar) {
+                sidebar.classList.toggle('show');
+            }
         }
 
         // Initialize sidebar state on page load
         document.addEventListener('DOMContentLoaded', function() {
             if (sidebarCollapsed) {
+                // Apply collapsed state immediately on load
                 const sidebar = document.getElementById('sidebar');
-                const pageWrapper = document.getElementById('page-wrapper');
-                const navbar = document.querySelector('.navbar-expand-md');
+                const pageWrapper = document.getElementById('page-wrapper') || document.querySelector('.page-wrapper');
+                const topNavbar = document.getElementById('top-navbar') || document.querySelector('.navbar-expand-md');
 
-                sidebar.classList.add('sidebar-collapsed');
-                pageWrapper.classList.add('sidebar-collapsed');
-                navbar.classList.add('sidebar-collapsed');
+                if (sidebar) sidebar.classList.add('sidebar-collapsed');
+                if (pageWrapper) pageWrapper.classList.add('sidebar-collapsed');
+                if (topNavbar) topNavbar.classList.add('sidebar-collapsed');
             }
         });
 
-        // Close mobile sidebar when clicking outside
+        // Close mobile sidebar when clicking outside (mobile only)
         document.addEventListener('click', function(event) {
             const sidebar = document.getElementById('sidebar');
-            const toggleButton = document.querySelector('.navbar-toggler');
+            const mobileToggle = document.querySelector('.navbar-toggler');
 
-            if (window.innerWidth < 768 &&
-                !sidebar.contains(event.target) &&
-                !toggleButton.contains(event.target) &&
-                sidebar.classList.contains('show')) {
-                sidebar.classList.remove('show');
+            // Only handle mobile sidebar closing
+            if (window.innerWidth < 992 && sidebar && mobileToggle) {
+                if (!sidebar.contains(event.target) &&
+                    !mobileToggle.contains(event.target) &&
+                    sidebar.classList.contains('show')) {
+                    sidebar.classList.remove('show');
+                }
             }
         });
 
-        // Handle window resize
+        // Handle window resize - clean up mobile states
         window.addEventListener('resize', function() {
             const sidebar = document.getElementById('sidebar');
-            if (window.innerWidth >= 768) {
+            if (sidebar && window.innerWidth >= 992) {
+                // Remove mobile show class on desktop
                 sidebar.classList.remove('show');
             }
         });
