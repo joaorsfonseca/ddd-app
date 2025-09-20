@@ -1,0 +1,326 @@
+﻿@{
+    ViewData["Title"] = "Projects";
+    Layout = "_Layout";
+}
+
+@section PageActions {
+    <div class="btn-list">
+        <a href="#" class="btn btn-primary d-none d-sm-inline-block">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Create New Project
+        </a>
+        <a href="#" class="btn btn-primary d-sm-none btn-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+        </a>
+    </div>
+}
+
+<div class="row row-cards">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Projects Management</h3>
+                <div class="card-actions">
+                    <button class="btn btn-outline-primary btn-sm" onclick="refreshTable()">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
+                            <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="projectsTable" class="table table-vcenter table-mobile-md card-table">
+                        <thead>
+                            <tr>
+                                <th class="w-1">ID</th>
+                                <th>#Ref</th>
+                                <th>Project</th>
+                                <th>Manager</th>
+                                <th>Status</th>
+                                <th>Type</th>
+                                <th>Last Control</th>
+                                <th class="w-1">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by DataTables -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer d-flex align-items-center">
+                <p class="m-0 text-muted">
+                    Showing <span id="showing-start">0</span> to <span id="showing-end">0</span>
+                    of <span id="total-records">0</span> projects
+                </p>
+                <div class="ms-auto">
+                    <div id="table-pagination"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal modal-blur fade" id="loadingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h3 class="mt-3">Loading Projects...</h3>
+                <div class="text-muted">Please wait while we fetch the data.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- jQuery (Required for DataTables) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <!-- DataTables CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+    <script>
+        let projectsTable;
+
+        $(document).ready(function() {
+            console.log('Initializing Projects DataTable...');
+
+            // Test the endpoint first
+            console.log('Testing endpoint:', '@Url.Action("GetData", "Projects")');
+
+            // Initialize DataTable
+            projectsTable = $('#projectsTable').DataTable({
+                processing: true,
+                serverSide: false, // Changed to false for debugging
+                responsive: true,
+                ajax: {
+                    url: '@Url.Action("GetData", "Projects")',
+                    type: 'GET',
+                    beforeSend: function(xhr, settings) {
+                        console.log('Making request to:', settings.url);
+                        $('#loadingModal').modal('show');
+                    },
+                    complete: function(xhr, textStatus) {
+                        console.log('Request completed:', textStatus);
+                        console.log('Response:', xhr.responseText);
+                        $('#loadingModal').modal('hide');
+                        updateFooterInfo();
+                    },
+                    error: function(xhr, error, thrown) {
+                        console.error('DataTables Ajax Error:', error, thrown);
+                        console.error('Response Text:', xhr.responseText);
+                        console.error('Status:', xhr.status);
+                        $('#loadingModal').modal('hide');
+
+                        // Show error message
+                        alert('Error loading projects data: ' + error + '\nCheck console for details.');
+                    },
+                    dataSrc: function(json) {
+                        console.log('Received data:', json);
+                        return json.data || json; // Handle both server-side and client-side data
+                    }
+                },
+                columns: [
+                    {
+                        data: 'id',
+                        name: 'id',
+                        width: '60px',
+                        className: 'text-muted',
+                        title: 'ID'
+                    },
+                    {
+                        data: 'refDisplay',
+                        name: 'refDisplay',
+                        width: '150px',
+                        className: 'text-nowrap',
+                        title: '#Ref'
+                    },
+                    {
+                        data: 'name',
+                        name: 'name',
+                        className: 'fw-bold',
+                        title: 'Project'
+                    },
+                    {
+                        data: 'manager',
+                        name: 'manager',
+                        width: '120px',
+                        title: 'Manager'
+                    },
+                    {
+                        data: function(row) {
+                            return row.statusBadge || `<span class="badge bg-secondary">${row.status || 'Unknown'}</span>`;
+                        },
+                        name: 'status',
+                        width: '100px',
+                        orderable: true,
+                        searchable: true,
+                        title: 'Status'
+                    },
+                    {
+                        data: 'type',
+                        name: 'type',
+                        width: '100px',
+                        title: 'Type'
+                    },
+                    {
+                        data: 'lastControl',
+                        name: 'lastControl',
+                        width: '120px',
+                        className: 'text-nowrap',
+                        title: 'Last Control'
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        width: '100px',
+                        className: 'text-end',
+                        title: 'Actions',
+                        render: function(data, type, row) {
+                            return `
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="viewProject(${row.id})" title="View">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                            <circle cx="12" cy="12" r="2"/>
+                                            <path d="M22 12c-2.667 4.667 -6 7 -10 7s-7.333 -2.333 -10 -7c2.667 -4.667 6 -7 10 -7s7.333 2.333 10 7"/>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="editProject(${row.id})" title="Edit">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                            <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"/>
+                                            <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"/>
+                                            <path d="M16 5l3 3"/>
+                                        </svg>
+                                    </button>
+                                </div>`;
+                        }
+                    }
+                ],
+                order: [[6, 'desc']], // Sort by Last Control (descending)
+                pageLength: 25,
+                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                language: {
+                    processing: '<div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Loading...</span></div> Loading...',
+                    search: '',
+                    searchPlaceholder: 'Search projects...',
+                    lengthMenu: 'Show _MENU_ projects',
+                    info: '',
+                    infoEmpty: 'No projects found',
+                    infoFiltered: '(filtered from _MAX_ total projects)',
+                    zeroRecords: 'No matching projects found',
+                    emptyTable: 'No projects available'
+                },
+                dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+                drawCallback: function() {
+                    updateFooterInfo();
+                }
+            });
+
+            // Style the search input
+            $('.dataTables_filter input').addClass('form-control form-control-sm');
+            $('.dataTables_length select').addClass('form-select form-select-sm');
+
+            console.log('DataTable initialized successfully');
+        });
+
+        function updateFooterInfo() {
+            if (!projectsTable) return;
+
+            const info = projectsTable.page.info();
+            $('#showing-start').text(info.recordsDisplay > 0 ? info.start + 1 : 0);
+            $('#showing-end').text(info.end);
+            $('#total-records').text(info.recordsTotal);
+        }
+
+        function refreshTable() {
+            console.log('Refreshing table...');
+            if (projectsTable) {
+                projectsTable.ajax.reload(null, false);
+            }
+        }
+
+        function viewProject(id) {
+            console.log('View project:', id);
+            // Implement view project functionality
+            window.location.href = `/Projects/Details/${id}`;
+        }
+
+        function editProject(id) {
+            console.log('Edit project:', id);
+            // Implement edit project functionality
+            window.location.href = `/Projects/Edit/${id}`;
+        }
+    </script>
+
+    <style>
+        /* Custom DataTables styling for Tabler */
+        .dataTables_wrapper .dataTables_filter {
+            float: none !important;
+            text-align: right;
+        }
+
+        .dataTables_wrapper .dataTables_length {
+            float: none !important;
+        }
+
+        .table td, .table th {
+            vertical-align: middle;
+        }
+
+        .table-responsive {
+            border-radius: var(--tblr-border-radius);
+        }
+
+        .dataTables_processing {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--tblr-border-color);
+            border-radius: var(--tblr-border-radius);
+            color: var(--tblr-body-color);
+        }
+
+        /* Status badge styling */
+        .badge {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.25rem 0.5rem;
+        }
+
+        /* Responsive table improvements */
+        @@media (max-width: 768px) {
+            .table-responsive table
+
+        {
+            font-size: 0.875rem;
+        }
+
+        .btn-group .btn {
+            padding: 0.25rem 0.5rem;
+        }
+
+        }
+    </style>
+}
