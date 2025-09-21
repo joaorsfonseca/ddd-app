@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MyApp.Application;
 using MyApp.Application.Security;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 
 namespace MyApp.Host.Endpoints;
 
@@ -15,7 +16,7 @@ public static class AppServiceEndpointMapper
     public static IEndpointRouteBuilder MapAppServiceImplementations(this IEndpointRouteBuilder endpoints, Assembly appAssembly)
     {
         var api = endpoints.MapGroup("/api")
-            .WithGroupName("v1")  // This is crucial for .NET 9 OpenAPI!
+            .WithGroupName("v1")
             .RequireAuthorization(new AuthorizeAttribute
             {
                 AuthenticationSchemes = $"{IdentityConstants.ApplicationScheme},{JwtBearerDefaults.AuthenticationScheme}"
@@ -30,7 +31,7 @@ public static class AppServiceEndpointMapper
             var svcName = TrimSuffix(impl.Name, "AppService").ToLowerInvariant();
             var group = api.MapGroup($"/{svcName}")
                 .WithTags(char.ToUpper(svcName[0]) + svcName[1..])
-                .WithGroupName("v1");  // Also add group name here
+                .WithGroupName("v1");
 
             var methods = impl.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
                               .Where(m => !m.IsSpecialName);
@@ -41,31 +42,39 @@ public static class AppServiceEndpointMapper
                 var methodSegment = TrimSuffix(m.Name, "Async").ToLowerInvariant();
                 var route = $"/{methodSegment}";
 
-                // Create endpoint using standard Map* methods instead of RequestDelegateFactory
+                // Create endpoint using standard Map* methods with proper type information
                 var builder = MapEndpointByVerb(group, http, route, impl, m);
 
                 var perm = m.GetCustomAttribute<RequiresPermissionAttribute>()?.Name;
                 if (!string.IsNullOrWhiteSpace(perm))
                     builder.RequireAuthorization($"Permission:{perm}");
 
-                // .NET 9 OpenAPI metadata
+                // Add OpenAPI metadata with proper input/output types
                 builder.WithName($"{svcName}_{methodSegment}")
                        .WithSummary($"{methodSegment} operation for {svcName}")
                        .WithDescription($"Calls {impl.Name}.{m.Name}")
-                       .WithTags(char.ToUpper(svcName[0]) + svcName[1..])
-                       .WithOpenApi(operation =>
-                       {
-                           operation.OperationId = $"{svcName}_{methodSegment}";
-                           operation.Summary = $"{methodSegment} operation for {svcName}";
-                           operation.Description = $"Calls {impl.Name}.{m.Name}";
+                       .WithTags(char.ToUpper(svcName[0]) + svcName[1..]);
 
-                           if (!string.IsNullOrWhiteSpace(perm))
-                           {
-                               operation.Description += $"\n\n**Required Permission:** `{perm}`";
-                           }
+                // Add response type metadata
+                AddResponseTypeMetadata(builder, m);
 
-                           return operation;
-                       });
+                // Add request body metadata
+                AddRequestBodyMetadata(builder, m);
+
+                // Enhanced OpenAPI configuration
+                builder.WithOpenApi(operation =>
+                {
+                    operation.OperationId = $"{svcName}_{methodSegment}";
+                    operation.Summary = $"{methodSegment} operation for {svcName}";
+                    operation.Description = $"Calls {impl.Name}.{m.Name}";
+
+                    if (!string.IsNullOrWhiteSpace(perm))
+                    {
+                        operation.Description += $"\n\n**Required Permission:** `{perm}`";
+                    }
+
+                    return operation;
+                });
             }
         }
         return endpoints;
@@ -73,72 +82,154 @@ public static class AppServiceEndpointMapper
 
     private static RouteHandlerBuilder MapEndpointByVerb(RouteGroupBuilder group, string httpVerb, string route, Type implType, MethodInfo method)
     {
-        // Map endpoints using standard Minimal API methods for better OpenAPI integration
         return httpVerb.ToUpper() switch
         {
             "GET" => group.MapGet(route, CreateHandler(implType, method)),
             "POST" => group.MapPost(route, CreateHandler(implType, method)),
             "PUT" => group.MapPut(route, CreateHandler(implType, method)),
             "DELETE" => group.MapDelete(route, CreateHandler(implType, method)),
-            _ => group.MapPost(route, CreateHandler(implType, method)) // Default fallback
+            _ => group.MapPost(route, CreateHandler(implType, method))
         };
+    }
+
+    private static void AddResponseTypeMetadata(RouteHandlerBuilder builder, MethodInfo method)
+    {
+        // Add standard error responses
+        builder.Produces<ProblemDetails>(400)
+               .Produces<ProblemDetails>(401)
+               .Produces<ProblemDetails>(403)
+               .Produces<ProblemDetails>(500);
+
+        if (method.ReturnType == typeof(Task))
+        {
+            // Void async methods
+            if (method.Name.StartsWith("Delete", StringComparison.OrdinalIgnoreCase) ||
+                method.Name.StartsWith("Update", StringComparison.OrdinalIgnoreCase))
+            {
+                builder.Produces(204); // No Content
+            }
+            else
+            {
+                builder.Produces(200); // OK
+            }
+        }
+        else if (method.ReturnType.IsGenericType && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+        {
+            var returnType = method.ReturnType.GetGenericArguments()[0];
+
+            if (returnType == typeof(Guid))
+            {
+                // Create operations returning Guid
+                if (method.Name.StartsWith("Create", StringComparison.OrdinalIgnoreCase))
+                {
+                    builder.Produces<Guid>(201); // Created
+                }
+                else
+                {
+                    builder.Produces<Guid>(200); // OK
+                }
+            }
+            else if (IsNullableType(returnType))
+            {
+                // Get operations that might return null (like GetAsync)
+                builder.Produces(200, returnType)
+                       .Produces(404); // Not Found
+            }
+            else
+            {
+                // Regular return types - THIS IS THE KEY FIX!
+                builder.Produces(200, returnType);
+
+                // Add specific success response for lists
+                if (returnType.IsGenericType)
+                {
+                    var genericDef = returnType.GetGenericTypeDefinition();
+                    if (genericDef == typeof(List<>) || genericDef == typeof(IReadOnlyList<>) || genericDef == typeof(IList<>))
+                    {
+                        // This ensures List<ProjectListDto> shows up in OpenAPI
+                        builder.Produces(200, returnType, "application/json");
+                    }
+                }
+            }
+        }
+
+        // Add 404 for specific GET operations
+        if (method.Name.StartsWith("Get", StringComparison.OrdinalIgnoreCase) &&
+            !method.Name.StartsWith("GetAll", StringComparison.OrdinalIgnoreCase))
+        {
+            builder.Produces(404);
+        }
+    }
+
+    private static void AddRequestBodyMetadata(RouteHandlerBuilder builder, MethodInfo method)
+    {
+        var parameters = method.GetParameters()
+            .Where(p => p.ParameterType != typeof(CancellationToken) &&
+                       p.ParameterType != typeof(Guid) &&
+                       !IsSimpleType(p.ParameterType))
+            .ToArray();
+
+        foreach (var param in parameters)
+        {
+            // Add request body type for complex parameters
+            if (!IsSimpleType(param.ParameterType))
+            {
+                builder.Accepts(param.ParameterType, "application/json");
+            }
+        }
     }
 
     private static Delegate CreateHandler(Type implType, MethodInfo method)
     {
         var parameters = method.GetParameters();
-        var serviceParam = typeof(IServiceProvider);
 
-        // Create a delegate that matches the method signature
+        // Method with only CancellationToken (like GetAllAsync)
         if (parameters.Length == 1 && parameters[0].ParameterType == typeof(CancellationToken))
         {
-            // Method with only CancellationToken (like GetAllAsync)
             return async (IServiceProvider services, CancellationToken ct) =>
             {
                 var service = GetServiceInstance(services, implType);
 
                 if (method.ReturnType.IsGenericType && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
                 {
-                    // For Task<T> - we can get the result
                     var taskResult = method.Invoke(service, new object[] { ct })!;
                     var result = await (dynamic)taskResult;
                     return Results.Ok(result);
                 }
                 else
                 {
-                    // For Task (void) - just await without assignment
                     await (Task)method.Invoke(service, new object[] { ct })!;
                     return Results.Ok();
                 }
             };
         }
+        // Method with Guid id parameter (like GetAsync, DeleteAsync)
         else if (parameters.Length == 2 && parameters[0].ParameterType == typeof(Guid) && parameters[1].ParameterType == typeof(CancellationToken))
         {
-            // Method with Guid id parameter (like GetAsync, DeleteAsync)
             return async (Guid id, IServiceProvider services, CancellationToken ct) =>
             {
                 var service = GetServiceInstance(services, implType);
 
                 if (method.ReturnType.IsGenericType && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
                 {
-                    // For Task<T> - we can get the result
                     var taskResult = method.Invoke(service, new object[] { id, ct })!;
                     var result = await (dynamic)taskResult;
                     return result != null ? Results.Ok(result) : Results.NotFound();
                 }
                 else
                 {
-                    // For Task (void) - just await without assignment
                     await (Task)method.Invoke(service, new object[] { id, ct })!;
                     return method.Name.StartsWith("Delete", StringComparison.OrdinalIgnoreCase) ?
                         Results.NoContent() : Results.Ok();
                 }
             };
         }
+        // Method with one business parameter (like CreateAsync)
         else if (parameters.Length == 2 && parameters[1].ParameterType == typeof(CancellationToken))
         {
-            // Method with one business parameter (like CreateAsync)
             var businessParamType = parameters[0].ParameterType;
+
+            // Return strongly-typed delegate for better OpenAPI inference
             return async (HttpContext context, IServiceProvider services, CancellationToken ct) =>
             {
                 var body = await context.Request.ReadFromJsonAsync(businessParamType, ct);
@@ -146,7 +237,6 @@ public static class AppServiceEndpointMapper
 
                 if (method.ReturnType.IsGenericType && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
                 {
-                    // For Task<T> - we can get the result
                     var taskResult = method.Invoke(service, new object[] { body!, ct })!;
                     var result = await (dynamic)taskResult;
                     return result is Guid guid ?
@@ -155,16 +245,16 @@ public static class AppServiceEndpointMapper
                 }
                 else
                 {
-                    // For Task (void) - just await without assignment
                     await (Task)method.Invoke(service, new object[] { body!, ct })!;
                     return Results.Ok();
                 }
             };
         }
+        // Method with Guid id and business parameter (like UpdateAsync)
         else if (parameters.Length == 3 && parameters[0].ParameterType == typeof(Guid) && parameters[2].ParameterType == typeof(CancellationToken))
         {
-            // Method with Guid id and business parameter (like UpdateAsync)
             var businessParamType = parameters[1].ParameterType;
+
             return async (Guid id, HttpContext context, IServiceProvider services, CancellationToken ct) =>
             {
                 var body = await context.Request.ReadFromJsonAsync(businessParamType, ct);
@@ -181,14 +271,12 @@ public static class AppServiceEndpointMapper
 
             if (method.ReturnType.IsGenericType && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
             {
-                // For Task<T> - we can get the result
                 var taskResult = method.Invoke(service, new object[] { ct })!;
                 var result = await (dynamic)taskResult;
                 return Results.Ok(result);
             }
             else
             {
-                // For Task (void) - just await without assignment
                 await (Task)method.Invoke(service, new object[] { ct })!;
                 return Results.Ok();
             }
@@ -214,6 +302,23 @@ public static class AppServiceEndpointMapper
 
         // Last resort: create instance using ActivatorUtilities
         return ActivatorUtilities.CreateInstance(serviceProvider, implementationType);
+    }
+
+    private static bool IsNullableType(Type type)
+    {
+        return !type.IsValueType ||
+               (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>));
+    }
+
+    private static bool IsSimpleType(Type type)
+    {
+        return type.IsPrimitive ||
+               type == typeof(string) ||
+               type == typeof(DateTime) ||
+               type == typeof(DateTimeOffset) ||
+               type == typeof(Guid) ||
+               type == typeof(decimal) ||
+               (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>) && IsSimpleType(type.GetGenericArguments()[0]));
     }
 
     private static string InferVerb(string methodName) =>
