@@ -1,0 +1,53 @@
+﻿@using Microsoft.AspNetCore.Localization
+@using System.Globalization
+
+@{
+    var requestCultureFeature = Context.Features.Get<IRequestCultureFeature>();
+    var currentCulture = requestCultureFeature?.RequestCulture?.Culture ?? CultureInfo.CurrentCulture;
+
+    var languages = new Dictionary<string, (string Name, string FlagCode)>
+    {
+        { "en-US", ("English", "us") },
+        { "pt-PT", ("Português", "pt") },
+        { "pt-BR", ("Português BR", "br") },
+        { "es-ES", ("Español", "es") },
+        { "fr-FR", ("Français", "fr") }
+    };
+
+    var currentLanguage = languages.ContainsKey(currentCulture.Name)
+        ? languages[currentCulture.Name]
+        : languages["en-US"];
+}
+
+<div class="nav-item dropdown">
+    <a class="nav-link d-flex lh-1 text-reset p-0" href="#" data-bs-toggle="dropdown"
+       aria-label="Language selector" aria-expanded="false">
+        <span class="fi fi-@currentLanguage.FlagCode" style="width: 24px; height: 18px; border-radius: 3px;"></span>
+    </a>
+    <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+        <div class="dropdown-header">Select Language</div>
+        @foreach (var lang in languages)
+        {
+            <form asp-controller="Language" asp-action="ChangeLanguage" method="post" style="display: inline; width: 100%;">
+                <input type="hidden" name="culture" value="@lang.Key" />
+                <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                <button type="submit" class="dropdown-item @(currentCulture.Name == lang.Key ? "active" : "")"
+                        style="border: none; background: none; width: 100%; text-align: left; display: flex; align-items: center;">
+                    <span class="fi fi-@lang.Value.FlagCode me-2" style="width: 20px; height: 15px; border-radius: 2px;"></span>
+                    @lang.Value.Name
+                    @if (currentCulture.Name == lang.Key)
+                    {
+                        <span class="ms-auto">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-check" 
+                                 width="16" height="16" viewBox="0 0 24 24" stroke-width="2" 
+                                 stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="m5 12 5 5L20 7"></path>
+                            </svg>
+                        </span>
+                    }
+                </button>
+            </form>
+        }
+    </div>
+</div>

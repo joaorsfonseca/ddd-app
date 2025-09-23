@@ -1,1 +1,13 @@
-@{ ViewData["Title"] = "Home"; } <div class="text-center"><h1 class="display-4">Welcome to MyApp (Single Host)</h1><p><a href="/Identity/Account/Login">Login</a> (admin@local / Pass@word1)</p><p><a href="/Home/Secure">Secure page (requires Products.Read)</a></p></div>
+@{
+    ViewData["Title"] = "Home";
+}
+<div class="text-center">
+    <h1>@SharedResource.Welcome</h1>
+    <h1 class="display-4">Welcome to MyApp (Single Host)</h1>
+    <p>
+        <a href="/Identity/Account/Login">Login</a> (admin@local / Pass@word1)
+    </p>
+    <p>
+        <a href="/Home/Secure">Secure page (requires Products.Read)</a>
+    </p>
+</div>

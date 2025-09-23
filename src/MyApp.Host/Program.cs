@@ -10,6 +10,8 @@ using MyApp.Infrastructure;
 using MyApp.Infrastructure.Seed;
 using Microsoft.AspNetCore.OpenApi;
 using Scalar.AspNetCore;
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 var cfg = builder.Configuration;
@@ -56,8 +58,38 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddViewLocalization()
+    .AddDataAnnotationsLocalization();
 builder.Services.AddRazorPages();
+
+// Configure localization
+builder.Services.AddLocalization(options =>
+{
+    options.ResourcesPath = "Resources";
+});
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supportedCultures = new[]
+    {
+        new CultureInfo("en-US"),
+        new CultureInfo("pt-PT"),
+        new CultureInfo("pt-BR"),
+        new CultureInfo("es-ES"),
+        new CultureInfo("fr-FR")
+    };
+
+    options.DefaultRequestCulture = new RequestCulture("en-US");
+    options.SupportedCultures = supportedCultures;
+    options.SupportedUICultures = supportedCultures;
+
+    // Configure culture providers
+    options.RequestCultureProviders.Clear();
+    options.RequestCultureProviders.Add(new QueryStringRequestCultureProvider());
+    options.RequestCultureProviders.Add(new CookieRequestCultureProvider());
+    options.RequestCultureProviders.Add(new AcceptLanguageHeaderRequestCultureProvider());
+});
 
 // .NET 9 Native OpenAPI Support 🚀
 builder.Services.AddOpenApi(options =>
@@ -102,6 +134,10 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+
+// Add localization middleware
+app.UseRequestLocalization();
+
 app.UseCors("PowerPlatform");
 app.UseAuthentication();
 app.UseAuthorization();

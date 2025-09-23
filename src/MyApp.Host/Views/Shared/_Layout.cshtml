@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - MyApp</title>
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css" />
+
     <!-- Tabler Core CSS -->
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/&#64;tabler/core@1.4.0/dist/css/tabler.min.css" />
@@ -318,6 +320,9 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Language Selector - Add this -->
+                    @await Html.PartialAsync("_LanguageSelector")
 
                     <!-- User Menu -->
                     <partial name="_LoginPartial" />
