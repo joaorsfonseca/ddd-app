@@ -1,0 +1,732 @@
+﻿@model ProjectDetailViewModel
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+
+@{
+    ViewData["Title"] = $"{Model.Name} - Project Detail";
+
+    string GetEnumDisplayName(Enum enumValue)
+    {
+        return enumValue.GetType()
+            .GetMember(enumValue.ToString())
+            .First()
+            .GetCustomAttribute<DisplayAttribute>()
+            ?.GetName() ?? enumValue.ToString();
+    }
+}
+
+<!-- Project Header -->
+<div class="project-header">
+    <div class="container-xl">
+        <div class="row align-items-center py-4">
+            <div class="col-lg-8">
+                <!-- Breadcrumb -->
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb breadcrumb-modern mb-2">
+                        <li class="breadcrumb-item">
+                            <a asp-action="Index" class="text-white-50 text-decoration-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M7 8l-4 4l4 4" />
+                                    <path d="M17 8l4 4l-4 4" />
+                                    <path d="M14 4l-4 16" />
+                                </svg>
+                                Projects
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active text-white" aria-current="page">Detail</li>
+                    </ol>
+                </nav>
+
+                <!-- Project Info -->
+                <div class="d-flex align-items-center flex-wrap">
+                    <h1 class="h2 mb-0 me-3">
+                        <span class="text-white-50">#@Model.Code</span>
+                        <span class="ms-2">@Model.Name</span>
+                    </h1>
+                    <span class="badge bg-info-lt text-info me-2">@GetEnumDisplayName(Model.Type)</span>
+                    @if (Model.Warning != null)
+                    {
+                        <span class="badge @Model.Warning.BadgeClass project-badge">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                @switch (Model.Warning.Icon)
+                                {
+                                    case "alert-triangle":
+                                        <path d="M12 9v2m0 4v.01" />
+                                        <path d="M5.07 19H19a2 2 0 0 0 1.75 -2.75L13.75 4a2 2 0 0 0 -3.5 0L3.25 16.25a2 2 0 0 0 1.75 2.75" />
+                                        break;
+                                    default:
+                                        <path d="M12 9v2m0 4v.01" />
+                                        <path d="M5.07 19H19a2 2 0 0 0 1.75 -2.75L13.75 4a2 2 0 0 0 -3.5 0L3.25 16.25a2 2 0 0 0 1.75 2.75" />
+                                        break;
+                                }
+                            </svg>
+                            @Model.Warning.Message
+                        </span>
+                    }
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="col-lg-4 text-lg-end action-buttons">
+                <div class="btn-group me-2 mb-2" role="group">
+                    <button class="btn btn-outline-light" onclick="changeProjectType('@Model.Code')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M8 9l3 3l-3 3" />
+                            <path d="M13 15l3 -3l-3 -3" />
+                            <path d="M3 4h18v2a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-2z" />
+                            <path d="M5 20h14" />
+                            <path d="M5 16h14" />
+                        </svg>
+                        Change Type
+                    </button>
+                    <button class="btn btn-outline-light" onclick="toggleVisibility('@Model.Code', @Model.IsPublic.ToString().ToLower())">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            @if (Model.IsPublic)
+                            {
+                                <path d="M10.585 10.587a2 2 0 0 0 2.829 2.828" />
+                                <path d="M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674m2.86 -1.146a9.055 9.055 0 0 1 1.82 -.18c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.067 -2.138 2.87" />
+                                <path d="M3 3l18 18" />
+                            }
+                            else
+                            {
+                                <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+                                <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" />
+                            }
+                        </svg>
+                        @(Model.IsPublic ? "Make Private" : "Make Public")
+                    </button>
+                    <button class="btn btn-outline-light" onclick="cloneProject('@Model.Code')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M16 4v4a1 1 0 0 0 1 1h4" />
+                            <path d="M21 7h-5a2 2 0 0 1 -2 -2v-5h-7a2 2 0 0 0 -2 2v16a2 2 0 0 0 2 2h11a2 2 0 0 0 2 -2v-11z" />
+                            <path d="M9 14h6" />
+                            <path d="M12 11v6" />
+                        </svg>
+                        Clone
+                    </button>
+                </div>
+                <div class="btn-group mb-2" role="group">
+                    <button class="btn btn-outline-danger" onclick="changeStatus('@Model.Code', 'Cancelled')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M18 6l-12 12" />
+                            <path d="M6 6l12 12" />
+                        </svg>
+                        Close
+                    </button>
+                    <button class="btn btn-outline-warning" onclick="changeStatus('@Model.Code', 'Suspended')">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M6 10h12" />
+                            <path d="M6 14h12" />
+                            <path d="M12 3v1m0 16v1" />
+                        </svg>
+                        Suspend
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="container-xl">
+    <div class="project-stats">
+        <div class="row">
+            <div class="col-sm-6 col-xl-3 mb-3">
+                <div class="stat-card stat-primary">
+                    <div class="stat-value">@Model.Stats.HoursEstimated.ToString("N0")</div>
+                    <div class="stat-label">Hours Estimated</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3 mb-3">
+                <div class="stat-card stat-warning">
+                    <div class="stat-value">@Model.Stats.WorkToDo.ToString("N0")</div>
+                    <div class="stat-label">Work To Do</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3 mb-3">
+                <div class="stat-card stat-success">
+                    <div class="stat-value">@Model.Stats.CompletedHours.ToString("N0")</div>
+                    <div class="stat-label">Completed Hours</div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3 mb-3">
+                <div class="stat-card stat-info">
+                    <div class="stat-value">@Model.Stats.ConsumptionPercentage.ToString("F1")%</div>
+                    <div class="stat-label">Consumption</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="project-tabs">
+        <ul class="nav nav-pills nav-fill" id="projectTabs" role="tablist">
+            @foreach (var tab in Model.AvailableTabs.Where(t => t.IsVisible))
+            {
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(Model.ActiveTab == tab.Id ? "active" : "")"
+                            id="@(tab.Id)-tab"
+                            data-bs-toggle="pill"
+                            data-bs-target="#@tab.Id"
+                            type="button"
+                            role="tab"
+                            data-tab-id="@tab.Id"
+                            data-project-id="@Model.Code">
+                        @tab.Name
+                        @if (tab.HasNotification && tab.NotificationCount > 0)
+                        {
+                            <span class="tab-notification">@tab.NotificationCount</span>
+                        }
+                    </button>
+                </li>
+            }
+        </ul>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="projectTabsContent">
+        <!-- Overview Tab -->
+        <div class="tab-pane fade @(Model.ActiveTab == "overview" ? "show active" : "")" id="overview" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-8">
+                    <h3 class="mb-3">Project Overview</h3>
+                    <p class="text-muted mb-4">@Model.Description</p>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">Progress Overview</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="progress mb-2">
+                                        <div class="progress-bar bg-success"
+                                             role="progressbar"
+                                             style="width: @Model.Progress.PercentageComplete%"
+                                             aria-valuenow="@Model.Progress.PercentageComplete"
+                                             aria-valuemin="0"
+                                             aria-valuemax="100"></div>
+                                    </div>
+                                    <small class="text-muted">
+                                        @Model.Progress.PercentageComplete.ToString("F1")% Complete
+                                        (@Model.Stats.CompletedHours.ToString("N0") of @Model.Stats.HoursEstimated.ToString("N0") hours)
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">Next Milestone</h4>
+                                </div>
+                                <div class="card-body">
+                                    <h5>@Model.Progress.NextMilestone</h5>
+                                    <small class="text-muted">Due in @Model.Progress.DaysUntilMilestone days</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">Project Details</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-2">
+                                        <div class="col-sm-4"><strong>Status:</strong></div>
+                                        <div class="col-sm-8">
+                                            <span class="badge bg-success">@GetEnumDisplayName(Model.Status)</span>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-sm-4"><strong>Created:</strong></div>
+                                        <div class="col-sm-8">@Model.CreatedDate.ToString("MMM dd, yyyy")</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-sm-4"><strong>Due Date:</strong></div>
+                                        <div class="col-sm-8">
+                                            @if (Model.DueDate.HasValue)
+                                            {
+                                                @Model.DueDate.Value.ToString("MMM dd, yyyy")
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Not set</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>Visibility:</strong></div>
+                                        <div class="col-sm-8">
+                                            <span class="badge @(Model.IsPublic ? "bg-success" : "bg-secondary")">
+                                                @(Model.IsPublic ? "Public" : "Private")
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">Budget Overview</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-2">
+                                        <div class="col-sm-6"><strong>Estimated Cost:</strong></div>
+                                        <div class="col-sm-6">$@((Model.Stats.HoursEstimated * 75).ToString("N0"))</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-sm-6"><strong>Spent:</strong></div>
+                                        <div class="col-sm-6">$@((Model.Stats.CompletedHours * 75).ToString("N0"))</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-sm-6"><strong>Remaining:</strong></div>
+                                        <div class="col-sm-6">$@((Model.Stats.WorkToDo * 75).ToString("N0"))</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title">Recent Activity</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group list-group-flush">
+                                @foreach (var activity in Model.RecentActivity)
+                                {
+                                    <div class="list-group-item">
+                                        <strong>@activity.Title</strong> @activity.Description
+                                        <small class="d-block text-muted">@activity.TimeAgo</small>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Other tabs will be loaded dynamically -->
+        @foreach (var tab in Model.AvailableTabs.Where(t => t.IsVisible && t.Id != "overview"))
+        {
+            <div class="tab-pane fade @(Model.ActiveTab == tab.Id ? "show active" : "")" id="@tab.Id" role="tabpanel">
+                <div class="loading-content" id="@tab.Id-content">
+                    <div class="loading-shimmer rounded mb-3" style="height: 200px;"></div>
+                    <h4>@tab.Name</h4>
+                    <p class="text-muted">Loading @tab.Name.ToLower() content...</p>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Tab loading functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabButtons = document.querySelectorAll('[data-bs-toggle="pill"]');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab-id');
+                    const projectId = this.getAttribute('data-project-id');
+
+                    // Skip loading for overview tab
+                    if (tabId === 'overview') return;
+
+                    const tabPane = document.getElementById(tabId);
+                    const loadingContent = document.getElementById(tabId + '-content');
+
+                    // Check if content is already loaded
+                    if (loadingContent && loadingContent.classList.contains('loading-content')) {
+                        // Simulate loading delay for demo
+                        setTimeout(() => {
+                            loadTabContent(projectId, tabId, tabPane);
+                        }, 800);
+                    }
+                });
+            });
+        });
+
+        function loadTabContent(projectId, tabId, tabPane) {
+            // In a real app, you'd make an AJAX call here
+            // fetch(`/Projects/LoadTabContent?projectId=${projectId}&tabId=${tabId}`)
+
+            // For demo, we'll just replace with sample content
+            tabPane.innerHTML = `
+                <div class="row">
+                    <div class="col-12">
+                        <h3 class="mb-3">${tabId.charAt(0).toUpperCase() + tabId.slice(1)} Management</h3>
+                        <div class="alert alert-info">
+                            <h4 class="alert-heading">Dynamic Content Loaded!</h4>
+                            <p>This is where the ${tabId} content would be dynamically loaded from the server.</p>
+                            <hr>
+                            <p class="mb-0">In a real application, this would contain forms, tables, charts, and other interactive elements specific to ${tabId} management.</p>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4 class="card-title">${tabId} Overview</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <p>Content specific to ${tabId} management would appear here.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4 class="card-title">Quick Actions</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <button class="btn btn-primary me-2">Add New</button>
+                                        <button class="btn btn-outline-secondary">Export</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Action button functions
+        function changeProjectType(projectId) {
+            if (confirm('Are you sure you want to change the project type?')) {
+                // In real app, show modal with type options
+                alert('Project type change functionality would be implemented here');
+            }
+        }
+
+        function toggleVisibility(projectId, isCurrentlyPublic) {
+            const action = isCurrentlyPublic ? 'make private' : 'make public';
+            if (confirm(`Are you sure you want to ${action} this project?`)) {
+                // Submit form to controller
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '@Url.Action("ToggleVisibility", "Projects")';
+
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'projectId';
+                input.value = projectId;
+                form.appendChild(input);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        function cloneProject(projectId) {
+            if (confirm('Are you sure you want to clone this project?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '@Url.Action("Clone", "Projects")';
+
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'projectId';
+                input.value = projectId;
+                form.appendChild(input);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        function changeStatus(projectId, newStatus) {
+            if (confirm(`Are you sure you want to ${newStatus.toLowerCase()} this project?`)) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '@Url.Action("ChangeStatus", "Projects")';
+
+                const projectInput = document.createElement('input');
+                projectInput.type = 'hidden';
+                projectInput.name = 'projectId';
+                projectInput.value = projectId;
+                form.appendChild(projectInput);
+
+                const statusInput = document.createElement('input');
+                statusInput.type = 'hidden';
+                statusInput.name = 'newStatus';
+                statusInput.value = newStatus;
+                form.appendChild(statusInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    </script>
+
+    <style>
+        .project-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 0 0 1rem 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
+        }
+
+        .project-stats {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: -1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .stat-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 3px;
+                border-radius: 12px 12px 0 0;
+            }
+
+            .stat-card.stat-primary::before {
+                background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+            }
+
+            .stat-card.stat-success::before {
+                background: linear-gradient(90deg, #10b981, #059669);
+            }
+
+            .stat-card.stat-warning::before {
+                background: linear-gradient(90deg, #f59e0b, #d97706);
+            }
+
+            .stat-card.stat-info::before {
+                background: linear-gradient(90deg, #06b6d4, #0891b2);
+            }
+
+            .stat-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            }
+
+        .stat-value {
+            font-size: 1.875rem;
+            font-weight: 700;
+            line-height: 1.2;
+            background: linear-gradient(135deg, #1e293b, #475569);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+
+        .project-tabs {
+            background: white;
+            border-radius: 16px;
+            padding: 0.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+
+        .nav-pills .nav-link {
+            border-radius: 12px;
+            padding: 0.75rem 1.25rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #64748b;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .nav-pills .nav-link::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                border-radius: 12px;
+            }
+
+            .nav-pills .nav-link:hover::before {
+                opacity: 1;
+            }
+
+            .nav-pills .nav-link:hover {
+                color: #667eea;
+                transform: translateY(-1px);
+            }
+
+            .nav-pills .nav-link.active {
+                background: linear-gradient(135deg, #667eea, #764ba2);
+                color: white;
+                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+                transform: translateY(-1px);
+            }
+
+                .nav-pills .nav-link.active::before {
+                    display: none;
+                }
+
+        .project-badge {
+            padding: 0.375rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @@keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
+        }
+
+        .breadcrumb-modern {
+            background: none;
+            padding: 0;
+            margin: 0;
+        }
+
+            .breadcrumb-modern .breadcrumb-item + .breadcrumb-item::before {
+                content: "→";
+                color: rgba(255, 255, 255, 0.7);
+                font-weight: bold;
+            }
+
+        .tab-content {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            min-height: 400px;
+        }
+
+        .action-buttons .btn {
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tab-notification {
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 0.5rem;
+            animation: bounce 1s infinite;
+        }
+
+        @@keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+
+            40% {
+                transform: translateY(-3px);
+            }
+
+            60% {
+                transform: translateY(-1px);
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .project-header {
+                border-radius: 0;
+                margin-bottom: 1rem;
+            }
+
+            .project-stats {
+                margin-top: 0;
+                border-radius: 8px;
+            }
+
+            .nav-pills {
+                flex-wrap: wrap;
+            }
+
+                .nav-pills .nav-link {
+                    padding: 0.5rem 0.75rem;
+                    font-size: 0.8rem;
+                    margin-bottom: 0.25rem;
+                }
+
+            .action-buttons {
+                text-align: center;
+                margin-top: 1rem;
+            }
+        }
+
+        .loading-content {
+            text-align: center;
+            padding: 3rem 1rem;
+        }
+
+        .loading-shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        @@keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+
+            100% {
+                background-position: 200% 0;
+            }
+        }
+    </style>
+}
